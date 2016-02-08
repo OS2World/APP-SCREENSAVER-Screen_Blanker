@@ -1,0 +1,17 @@
+;--------------------------------
+; SCRNBLNK DLL definition file
+;--------------------------------
+
+LIBRARY         SCRNBLNK
+
+DESCRIPTION    'Screen Blanker DLL v1.3b (C) Alan Ballard 1991'
+PROTMODE
+HEAPSIZE       0
+CODE           MOVEABLE DISCARDABLE
+DATA           MOVEABLE SINGLE PRELOAD 
+
+EXPORTS 
+    ScrnBlnkInstallHook @1 
+    ScrnBlnkReleaseHook @2
+    ScrnBlnkHook        @3
+    ScrnBlnkVersion     @4

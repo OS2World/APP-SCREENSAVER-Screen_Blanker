@@ -1,0 +1,355 @@
+#include <os2.h>
+#include "SCRNBLNK.H"
+#include "SCRNDLG.H"
+
+#ifdef CMD
+#define TITLE "Screen Blanker V1.3bx"
+#else
+#define TITLE "Screen Blanker V1.3b"
+#endif
+
+POINTER IDI_BLNK scrnblnk.ico
+
+DLGTEMPLATE IDD_HELLO
+BEGIN
+    DIALOG "", 0, 32, 184, 144, 22, WS_SAVEBITS, FCF_DLGBORDER
+    BEGIN
+        CTEXT   TITLE, -1, 3, 12, 136, 8
+        CTEXT   "copyright (c) Alan Ballard 1991", -1, 4, 2, 136, 8
+    END
+END
+
+DLGTEMPLATE IDD_BYE
+BEGIN
+    DIALOG "", 0, 32, 184, 144, 22, WS_SAVEBITS, FCF_DLGBORDER
+    BEGIN
+        CTEXT   "Screen Blanker terminating", -1, 4, 8, 136, 8
+    END
+END
+
+/* Define the positions and sizes of the control group boxes. */
+#define RUNY 44
+#ifdef CMD
+#define RUNH 26
+#define RUNSPACE 4
+#else
+#define RUNH 0
+#define RUNSPACE 0
+#endif
+#define CLOCKY RUNY+RUNH+RUNSPACE
+#define CLOCKH 26
+#define BLANKY (CLOCKY+CLOCKH+4)
+#define BLANKH 64
+WINDOWTEMPLATE IDD_OPTIONS LOADONCALL MOVEABLE DISCARDABLE
+BEGIN
+    FRAME  "", IDD_OPTIONS, 0, 0, 184, BLANKY+BLANKH+4, WS_SAVEBITS,
+                FCF_BORDER | FCF_SYSMENU | FCF_TITLEBAR | FCF_TASKLIST
+    BEGIN
+        /* Control order is following is defined to make the cursor
+         * keys work for moving through the group -- static text last.
+         */
+        GROUPBOX "Blank Screen", -1, 18, BLANKY, 148, BLANKH, WS_GROUP
+        AUTOCHECKBOX "PM Session", IDD_PMSESS, 24, BLANKY+43, 68, 11
+        AUTOCHECKBOX "DOS Session", IDD_DOSSESS, 24, BLANKY+30, 100, 11
+        AUTOCHECKBOX "Non-PM Sessions", IDD_NONPMSESS, 24, BLANKY+17, 100, 11
+        ENTRYFIELD "", IDD_TIME, 75, BLANKY+5, 12, 8, ES_MARGIN | ES_RIGHT
+        LTEXT "Blank after", -1, 24, BLANKY+5, 49, 8
+        LTEXT "minutes", -1, 89, BLANKY+5, 36, 8
+
+        GROUPBOX "Clock", -1, 18, CLOCKY, 148, CLOCKH, WS_GROUP
+        AUTOCHECKBOX "Show clock", IDD_SHOWCLOCK, 24, CLOCKY+5, 80, 11
+        PUSHBUTTON "Colors. . .", IDD_COLORS, 108, CLOCKY+4, 48, 14
+
+#ifdef CMD
+        GROUPBOX "Timeout Program", -1, 18, RUNY, 148, RUNH, WS_GROUP
+        AUTOCHECKBOX "Enable program", IDD_RUN, 24, RUNY+5, 80, 11
+        PUSHBUTTON "Setup. . .", IDD_RUNSETUP, 108, RUNY+4, 48, 14
+#endif
+
+        AUTOCHECKBOX "Save settings", IDD_PERM, 24, 27, 100, 11,
+                WS_TABSTOP | WS_GROUP
+        PUSHBUTTON "F1=Help", -1, 126, 24, 40, 14, BS_HELP
+        DEFPUSHBUTTON  "Set", DID_OK, 18, 5, 40, 14
+        PUSHBUTTON "Remove", IDD_REMOVE, 72, 5, 40, 14
+        PUSHBUTTON "Cancel", DID_CANCEL, 126, 5, 40, 14
+    END
+END
+
+DLGTEMPLATE IDD_COLORS LOADONCALL MOVEABLE DISCARDABLE
+BEGIN
+    DIALOG "Screen Blanker Colors", IDD_COLORS, 40, -16, 200, 136,
+                FS_DLGBORDER | WS_VISIBLE | WS_SAVEBITS,
+                FCF_SYSMENU | FCF_TITLEBAR
+    BEGIN
+        CONTROL "", IDD_CLOCK, 8, 76, 184, 56, "CLOCK", WS_VISIBLE
+        CONTROL "", IDD_COLBACK, 64, 62, 128, 8, WC_SCROLLBAR,
+                SBS_HORZ | WS_VISIBLE |
+                WS_TABSTOP | WS_GROUP
+        CONTROL "", IDD_COLBACK + 1, 64, 46, 128, 8, WC_SCROLLBAR, SBS_HORZ |
+                WS_VISIBLE |
+                WS_TABSTOP | WS_GROUP
+        CONTROL "", IDD_COLBACK + 2, 64, 30, 128, 8, WC_SCROLLBAR, SBS_HORZ |
+                WS_VISIBLE  |
+                WS_TABSTOP | WS_GROUP
+        RTEXT   "Background", -1, 5, 62, 52, 8,
+                DT_TOP | WS_GROUP | WS_VISIBLE
+        RTEXT   "Frame", -1, 5, 46, 52, 8,
+                DT_TOP | WS_GROUP | WS_VISIBLE
+        RTEXT   "Text", -1, 5, 30, 52, 8,
+                DT_TOP | WS_GROUP | WS_VISIBLE
+        CONTROL "Set", DID_OK, 16, 8, 44, 14, WC_BUTTON, BS_PUSHBUTTON |
+                BS_DEFAULT | WS_GROUP | WS_TABSTOP | WS_VISIBLE
+        CONTROL "Cancel", DID_CANCEL, 76, 8, 44, 14, WC_BUTTON, BS_PUSHBUTTON |
+                WS_TABSTOP | WS_VISIBLE
+    END
+END
+
+/* Basic help message width. */
+#define H1W 320
+
+/* Define Y coordinates and sizes of each string in the help box.
+ * Each line is 8 points. Defined from bottom message up....
+ */
+#define H1_CANCELY 18
+#define H1_CANCELH 8
+#define H1_REMOVEY H1_CANCELY + H1_CANCELH + 2
+#define H1_REMOVEH 16
+#define H1_SETY    H1_REMOVEY + H1_REMOVEH + 2
+#define H1_SETH    16
+#define H1_SAVEY   H1_SETY + H1_SETH + 2
+#define H1_SAVEH   24
+#ifdef CMD
+#define H1_SETUPY  H1_SAVEY + H1_SAVEH + 2
+#define H1_SETUPH  16
+#define H1_ENABLEY H1_SETUPY + H1_SETUPH + 2
+#define H1_ENABLEH 24
+#else
+#define H1_ENABLEY H1_SAVEY
+#define H1_ENABLEH H1_SAVEH
+#endif
+#define H1_COLORY  H1_ENABLEY + H1_ENABLEH + 2
+#define H1_COLORH  16
+#define H1_CLOCKY  H1_COLORY + H1_COLORH + 2
+#define H1_CLOCKH  16
+#define H1_TIMEY   H1_CLOCKY + H1_CLOCKH + 2
+#define H1_TIMEH   16
+#define H1_SESSY   H1_TIMEY + H1_TIMEH + 2
+#define H1_SESSH   16
+
+#define H1H        H1_SESSY + H1_SESSH + 4
+
+DLGTEMPLATE IDD_HELP LOADONCALL MOVEABLE DISCARDABLE
+BEGIN
+    DIALOG "Screen Blanker Help", IDD_HELP, 40, -48, H1W+8, H1H+20,
+                FS_BORDER | WS_VISIBLE | WS_CLIPSIBLINGS | WS_SAVEBITS,
+                FCF_TITLEBAR
+    BEGIN
+        ICON IDI_BLNK, -1, 16, H1H, 0, 0
+        CTEXT TITLE, -1, 50, H1H+8, H1W - 50, 8, DT_TOP
+        CTEXT "Copyright (c) Alan Ballard 1991", -1, 50, H1H, H1W-50, 8,
+                 DT_TOP
+        LTEXT "The ""PM Session"", ""DOS Session"", and ""Non-PM Sessions"" checkboxes determine in which sessions blanking can take effect.",
+                -1, 2, H1_SESSY, H1W, H1_SESSH, DT_TOP | DT_WORDBREAK
+        LTEXT "To change the period after which blanking occurs, enter the desired time in the indicated place.",
+                -1, 2, H1_TIMEY, H1W, H1_TIMEH, DT_TOP | DT_WORDBREAK
+        LTEXT "If ""Show clock"" is checked, the time and date are displayed while the screen is blanked.",
+                -1, 2, H1_CLOCKY, H1W, H1_CLOCKH, DT_TOP | DT_WORDBREAK
+        LTEXT "To change the colors of the clock displayed, select the ""Colors"" pushbutton, then choose prefered colors using scroll bars in the pop-up.",
+                -1, 2, H1_COLORY, H1W, H1_COLORH, DT_TOP |  DT_WORDBREAK
+#ifdef CMD
+        LTEXT "The ""Enable program"" checkbox is used to enable or disable running a program after a period of inactivity.  This is effective only if a program has been specified.",
+               -1, 2, H1_ENABLEY, H1W, H1_ENABLEH, DT_TOP | DT_WORDBREAK
+        LTEXT "The ""Setup"" pushbutton can be selected to enter the program to be run and related options.",
+               -1, 2, H1_SETUPY, H1W, H1_SETUPH, DT_TOP | DT_WORDBREAK
+#endif
+        LTEXT "If ""Save settings"" is checked when the Set pushbutton is selected, the current option settings will be stored in the OS2.INI file.  These settings will be automatically used next time the Screen Blanker is started.", 
+                -1, 2, H1_SAVEY, H1W, H1_SAVEH, DT_TOP | DT_WORDBREAK
+        LTEXT """Set"" pushbutton changes previously installed Screen Blanker to use selected options.",
+                -1, 2, H1_SETY, H1W, H1_SETH, DT_TOP | DT_WORDBREAK
+        LTEXT """Remove"" pushbutton removes previously installed Screen Blanker from memory.",
+                -1, 2, H1_REMOVEY, H1W, H1_REMOVEH, DT_TOP | DT_WORDBREAK
+        LTEXT """Cancel"" pushbutton leaves Screen Blanker settings unchanged.",
+                -1, 2, H1_CANCELY, H1W, H1_CANCELH, DT_TOP | DT_WORDBREAK
+        DEFPUSHBUTTON "Ok", DID_OK, 20, 03, 38, 10,
+                WS_TABSTOP | WS_VISIBLE
+    END
+END
+
+/* Help2 is used for initial install screen -- same as help1 except there
+ * is no remove button and first button is install rather than set. */
+DLGTEMPLATE IDD_HELP2 LOADONCALL MOVEABLE DISCARDABLE
+BEGIN
+    DIALOG "Screen Blanker Help", IDD_HELP, 40, -48, H1W+8, H1H+20,
+                FS_BORDER | WS_VISIBLE | WS_CLIPSIBLINGS | WS_SAVEBITS,
+                FCF_TITLEBAR
+    BEGIN
+        ICON IDI_BLNK, -1, 16, H1H, 0, 0
+        CTEXT TITLE, -1, 50, H1H+8, H1W - 50, 8, DT_TOP
+        CTEXT "Copyright (c) Alan Ballard 1991", -1, 50, H1H, H1W-50, 8,
+                 DT_TOP
+        LTEXT "The ""PM Session"", ""DOS Session"", and ""Non-PM Sessions"" checkboxes determine in which sessions blanking can take effect.",
+                -1, 2, H1_SESSY, H1W, H1_SESSH, DT_TOP | DT_WORDBREAK
+        LTEXT "To change the period after which blanking occurs, enter the desired time in the indicated place.",
+                -1, 2, H1_TIMEY, H1W, H1_TIMEH, DT_TOP | DT_WORDBREAK
+        LTEXT "If ""Show clock"" is checked, the time and date are displayed while the screen is blanked.",
+                -1, 2, H1_CLOCKY, H1W, H1_CLOCKH, DT_TOP | DT_WORDBREAK
+        LTEXT "To change the colors of the clock displayed, select the ""Colors"" pushbutton, then choose prefered colors using scroll bars in the pop-up.",
+                -1, 2, H1_COLORY, H1W, H1_COLORH, DT_TOP |  DT_WORDBREAK
+#ifdef CMD
+        LTEXT "The ""Enable program"" checkbox is used to enable or disable running a program after a period of inactivity.  This is effective only if a program has been specified.",
+               -1, 2, H1_ENABLEY, H1W, H1_ENABLEH, DT_TOP | DT_WORDBREAK
+        LTEXT "The ""Setup"" pushbutton can be selected to enter the program to be run and related options.",
+               -1, 2, H1_SETUPY, H1W, H1_SETUPH, DT_TOP | DT_WORDBREAK
+#endif
+        LTEXT "If ""Save settings"" is checked when the Set pushbutton is selected, the current option settings will be stored in the OS2.INI file.  These settings will be automatically used next time the Screen Blanker is started.",
+                -1, 2, H1_SAVEY, H1W, H1_SAVEH, DT_TOP | DT_WORDBREAK
+        LTEXT """Install"" pushbutton installs Screen Blanker in memory with the selected options.",
+                -1, 2, H1_SETY-8, H1W, H1_SETH, DT_TOP | DT_WORDBREAK
+        LTEXT """Cancel"" pushbutton cancels installation of Screen Blanker.",
+                -1, 2, H1_CANCELY+8, H1W, H1_CANCELH, DT_TOP | DT_WORDBREAK
+		  DEFPUSHBUTTON "Ok", DID_OK, 20, 06, 38, 10,
+                WS_TABSTOP | WS_VISIBLE
+    END
+END
+
+#ifdef CMD
+#define PROGY 30
+#define PROGH 54
+#define WARNY PROGY+PROGH+4
+#define WARNH 54
+
+DLGTEMPLATE IDD_RUNSETUP LOADONCALL MOVEABLE DISCARDABLE
+BEGIN
+    DIALOG "Screen Blanker Run Setup", IDD_RUNSETUP, 40, -10, 242,
+                WARNY+WARNH+4,
+                FS_NOBYTEALIGN |
+                FS_DLGBORDER | WS_VISIBLE | WS_SAVEBITS,
+                FCF_TITLEBAR | FCF_SYSMENU
+    BEGIN
+        /* Static controls last to make cursor keys work right. */
+        GROUPBOX "Warning", -1, 16, WARNY, 210, WARNH, WS_GROUP
+        ENTRYFIELD "", IDD_RUNWARNTIME, 88, WARNY+34, 12, 8,
+                ES_RIGHT | ES_MARGIN
+        ENTRYFIELD "",
+                IDD_RUNWARNMESS, 68, WARNY+19, 152, 8,
+                ES_LEFT | ES_AUTOSCROLL | ES_MARGIN
+        AUTOCHECKBOX "Warning beep", IDD_RUNBEEP, 22, WARNY+4, 74, 11
+        LTEXT "Message after", -1, 22, WARNY+34, 64, 8,
+        LTEXT "minutes idle", -1, 102, WARNY+34, 54, 8
+        LTEXT "Message:", -1, 22, WARNY+19, 42, 8
+
+        GROUPBOX "Program", -1, 16, PROGY, 210, PROGH, WS_GROUP
+        ENTRYFIELD "", IDD_RUNTIME, 88, PROGY+34, 12, 8,
+                ES_RIGHT | ES_MARGIN
+        ENTRYFIELD "", IDD_RUNCMD, 68, PROGY+19, 152, 8,
+                ES_LEFT | ES_AUTOSCROLL | ES_MARGIN
+        AUTOCHECKBOX "Close window after program runs", IDD_CLOSEWIN, 22, PROGY+4, 180, 11
+        LTEXT "Run after", -1, 22, PROGY+34, 64, 8
+        LTEXT "minutes idle", -1, 102, PROGY+34, 54, 8
+        LTEXT "Program:", -1, 22, PROGY+19, 42, 8
+
+        DEFPUSHBUTTON "Set", DID_OK, 16, 8, 44, 14,
+                WS_GROUP | WS_TABSTOP | WS_VISIBLE
+        PUSHBUTTON "Cancel", DID_CANCEL, 60+39, 8, 44, 14,
+                WS_TABSTOP | WS_VISIBLE
+		  PUSHBUTTON "F1=Help", -1, 143+39, 8, 44, 14,
+                BS_HELP | WS_TABSTOP | WS_VISIBLE
+    END
+END
+
+/* Help3 is help panel for the setup box. */
+/* define y coordindates and heights for each message. */
+#define H3W 270
+#define H3_CANCELY 18
+#define H3_CANCELH 16
+#define H3_SETY    H3_CANCELY + H3_CANCELH + 2
+#define H3_SETH    16
+
+#define H3_CLOSEY   H3_SETY + H1_SETH + 4
+#define H3_CLOSEH   24
+#define H3_PROGRAMY H3_CLOSEY + H3_CLOSEH + 2
+#define H3_PROGRAMH 32
+#define H3_RUNTIMEY H3_PROGRAMY + H3_PROGRAMH + 2
+#define H3_RUNTIMEH 16
+#define H3_PROGGRPY H3_RUNTIMEY + H3_RUNTIMEH + 2
+#define H3_PROGGRPH 16
+#define H3_BEEPY	  H3_PROGGRPY + H3_PROGGRPH + 4
+#define H3_BEEPH	  16
+#define H3_WARNTIMEY  H3_BEEPY + H3_BEEPH + 2
+#define H3_WARNTIMEH  16
+#define H3_WARNGRPY   H3_WARNTIMEY + H3_WARNTIMEH + 2
+#define H3_WARNGRPH   32
+#define H3H          H3_WARNGRPY + H3_WARNGRPH + 4
+
+DLGTEMPLATE IDD_HELP3 LOADONCALL MOVEABLE DISCARDABLE
+BEGIN
+	 DIALOG "Run Setup Help", IDD_HELP3, 40, -20, H3W+8, H3H,
+                FS_BORDER | WS_VISIBLE | WS_CLIPSIBLINGS | WS_SAVEBITS,
+                FCF_TITLEBAR
+    BEGIN
+		  LTEXT "The ""Warning"" group specifies a warning message and/or tone to be issued if the system is inactive for a period of time.  If ""Warning beep"" is not checked, and no message is entered in the message box, no warning will be issued.",
+               -1, 2, H3_WARNGRPY, H3W, H3_WARNGRPH, DT_TOP | DT_WORDBREAK
+		  LTEXT "Enter the time interval after which the warning should be given, and the desired warning message, in the indicated places.",
+					-1, 2, H3_WARNTIMEY, H3W, H3_WARNTIMEH, DT_TOP | DT_WORDBREAK
+		  LTEXT "If ""Warning beep"" is checked, a warning tone will be sounded as well as displaying the message.",
+					-1, 2, H3_BEEPY, H3W, H3_BEEPH, DT_TOP | DT_WORDBREAK
+		  LTEXT "The ""Program"" group specifies a program to be run after a period of inactivity.",
+					-1, 2, H3_PROGGRPY, H3W, H3_PROGGRPH, DT_TOP | DT_WORDBREAK
+		  LTEXT "Enter the time interval after which the program should be run in the indicated place.",
+					-1, 2, H3_RUNTIMEY, H3W, H3_RUNTIMEH, DT_TOP | DT_WORDBREAK
+		  LTEXT "Enter the command to run in the ""Program"" text box.
+  This may be an arbitrary OS/2 command or batch file with any required command parameters. \  \ It must either be in the search path specified in CONFIG.SYS, or be a fully specified path.",
+					-1, 2, H3_PROGRAMY, H3W, H3_PROGRAMH, DT_TOP | DT_WORDBREAK
+		  LTEXT "If ""Close window..."" is checked, the command window in which the command runs will be closed when the command completes.  Otherwise it remains open."
+					-1, 2, H3_CLOSEY, H3W, H3_CLOSEH, DT_TOP | DT_WORDBREAK
+		  LTEXT """Set"" pushbutton sets the selected options and returns to the main Screen Blanker dialog.",
+					 -1, 2, H3_SETY, H3W, H3_SETH, DT_TOP | DT_WORDBREAK
+		  LTEXT """Cancel"" pushbutton cancels any changes made and returns to the main Screen Blanker dialog.",
+					 -1, 2, H3_CANCELY, H3W, H3_CANCELH, DT_TOP | DT_WORDBREAK
+		  DEFPUSHBUTTON "Ok", DID_OK, 20, 03, 38, 10,
+                WS_TABSTOP | WS_VISIBLE
+    END
+END
+
+#endif
+
+STRINGTABLE
+BEGIN
+   IDS_INVTIME "The blanking time interval is not valid.  Enter a number between 1 and 60 for the interval in minutes."
+#ifdef CMD
+   IDS_INVWARNTIME "The Warning time interval is not valid.  It must be a number between 1 and the ""Run After"" time in mimutes."
+   IDS_INVRUNTIME  "The ""Run After"" time interval is not valid.  Enter a number between 1 and 120 for the interval in minutes."
+#endif
+   IDS_CONFIG  "Screen Blanker appears to have been run from a CONFIG.SYS file."
+   IDS_CONFIG+1 "This isn't possible:  use the STARTUP.CMD file to install it instead."
+   IDS_CONFIG+2 "Press any key..."
+   IDS_CONFIG+3 ""
+   IDS_INVOPT   "Invalid Screen Blanker parameters."
+   IDS_ACTIVE   "Screen Blanker dialog is already active."
+   IDS_INVVERS  "An incompatible version of Screen Blanker is already running.  You must remove it from memory before installing a new version."
+   IDS_INSTALL "Install"
+   IDS_INVDLL   "The wrong version of Screen Blanker's DLL is installed.  You must replace it with the current version."
+
+   IDS_SUNDAY   "Sun"
+   IDS_SUNDAY+1 "Mon"
+   IDS_SUNDAY+2 "Tue"
+   IDS_SUNDAY+3 "Wed"
+   IDS_SUNDAY+4 "Thu"
+   IDS_SUNDAY+5 "Fri"
+   IDS_SUNDAY+6 "Sat"
+
+   IDS_JANUARY   "Jan"
+   IDS_JANUARY+1 "Feb"
+   IDS_JANUARY+2 "Mar"
+   IDS_JANUARY+3 "Apr"
+   IDS_JANUARY+4 "May"
+   IDS_JANUARY+5 "Jun"
+   IDS_JANUARY+6 "Jul"
+   IDS_JANUARY+7 "Aug"
+   IDS_JANUARY+8 "Sep"
+   IDS_JANUARY+9 "Oct"
+   IDS_JANUARY+10 "Nov"
+   IDS_JANUARY+11 "Dec"
+END
+
+

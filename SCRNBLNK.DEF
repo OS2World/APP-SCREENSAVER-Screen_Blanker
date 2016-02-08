@@ -1,0 +1,27 @@
+;--------------------------------
+; SCRNBLNK module definition file
+;--------------------------------
+
+NAME           SCRNBLNK  WINDOWAPI
+
+DESCRIPTION    'Screen Blanker v1.3b (C) Alan Ballard 1991'
+PROTMODE
+HEAPSIZE       2048
+STACKSIZE      4096
+
+SEGMENTS
+    _MAIN   PRELOAD MOVEABLE
+    _INST           MOVEABLE DISCARDABLE
+    _TIME           MOVEABLE DISCARDABLE
+    _BACK           MOVEABLE DISCARDABLE
+    _MNTR           MOVEABLE DISCARDABLE
+
+; imports from PMTKT dll  (undocumented system services)
+IMPORTS
+   PMTKT.WTILFILLSTRUCT
+   PMTKT.WTIADDEXT
+   PMTKT.WTILSTRLEN
+   PMTKT.WTILSTRCAT
+   PMTKT.WTILSTRCPY
+
+

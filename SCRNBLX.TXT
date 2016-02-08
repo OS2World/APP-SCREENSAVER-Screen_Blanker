@@ -1,0 +1,286 @@
+                              
+                              
+                    Screen Blanker V1.2
+              A Screen Saver Program for OS/2
+                              
+                                        Alan Ballard
+                                        December 16, 1990
+
+Notice:        Screen Blanker is (c) copyright 1990 Alan
+               Ballard. It may not be sold, traded, or
+               otherwise disposed of for profit without
+               permission from the author.
+
+Disclaimer:         This program is offered on an "as-is"
+               basis without any guarantee as to correct
+               functioning or fitness for any specific
+               purpose. The author believes this program to
+               work as described, but you use the program
+               entirely at your own risk.  It is your
+               responsibility to evaluate the suitability of
+               the program for your requirements.  In using
+               the program, you agree that you will not
+               attempt to hold the author responsible for
+               any hardware or software damage, loss of
+               data, or incidental or consequential damage
+               that may result from use of the program,
+               whether or not such use is in accordance with
+               the instructions.
+
+Purpose:       A screen saver is a program which blanks the
+               screen after a specified period of
+               inactivity, in order to prevent patterns from
+               being "burned-in" to the screen.
+
+               This special version includes extensions to
+               enable an arbitrary OS/2 program to be run
+               after a specified period, as well as the
+               normal screen blanking function.  This
+               program could be used, for example, to logout
+               an OS/2 Extended Edition command session.
+
+Hardware and software required:
+               Screen Blanker Version 1.3 requires OS/2
+               Version 1.2.  It should work with either
+               Standard Edition or Extended Edition and with
+               any computer and monitor that are supported
+               by OS/2. The current version (1.3) has only
+               been tested with OS/2 1.2 SE syslevel XR04073
+               and OS/2 1.3 SE.
+               
+Installation:
+               Copy the file SCRNBLNK.EXE to a directory
+               that is part of your normal OS/2 search path.
+               \OS2 or \OS2\PBIN are good candidates.
+               
+               Copy the file SCRNBLNK.DLL to any directory
+               that is specified in your OS/2 LIBPATH.
+                                                      Page 2
+
+               \OS2\DLL is normally used for DLL's, but any
+               other directory in the LIBPATH is OK.
+               
+               Note if you are installing this version to
+               replace a previous version of Screen Blanker,
+               it is important to also replace the DLL file.
+               To do so, it may be necessary to first remove
+               Screen Blanker from your startup and reboot.
+               
+               Then, modify your STARTUP.CMD file to
+               activate Screen Blanker each time you reboot
+               your system.  The command to do this is:
+                    SCRNBLNK /INSTALL
+               You may also wish to add an entry for Screen
+               Blanker to a Desktop Manager program group so
+               you can easily start it at other times.
+               
+               If you want Screen Blanker to also be
+               effective in OS/2 DOS sessions, you must also
+               install a device driver.  Copy the file
+               SCRNBLNK.SYS to a suitable directory (such as
+               OS2\SYSTEM).  Then modify your CONFIG.SYS
+               file to install this driver at startup.  You
+               must add a line of the form:
+                    DEVICE=C:\OS2\SYSTEM\SCRNBLNK.SYS
+               (or wherever you installed the file).  This
+               line should go before the DEVICE=... lines
+               which install the mouse drivers; otherwise
+               Screen Blanker will be unable to detect mouse
+               activity within the DOS box.
+               
+Usage:         Screen Blanker is normally activated from
+               your STARTUP.CMD file whenever the system is
+               booted, as described under Installation
+               above.
+               
+               Once Screen Blanker has been activated, it
+               will monitor keyboard and mouse activity in
+               all OS/2 sessions.  If the specified period
+               elapses without either being used, the screen
+               will be blanked. Optionally, a display of the
+               current date and time will be shown in random
+               positions on the screen.
+               
+               The screen can be restored to its previous
+               state by pressing any key or moving the
+               mouse.
+               
+               If an "inactivity program" has been set up
+               (as described below), then a program or
+               command file will be run when a specified
+               period of time has elapsed without any
+               keyboard or mouse activity.  A warning
+               message may optionally be displayed before
+               this action occurs.  The inactivity program
+
+                                                      Page 3
+
+               and/or warning may occur either before or
+               after screen blanking, depending on selected
+               time values.
+               
+               Screen Blanker may also be started at other
+               times in any of the usual OS/2 ways -- by
+               selecting it from the File System, by an
+               entry in a Start Programs menu, or by
+               entering the command SCRNBLNK from a command-
+               line window.
+               
+               When Screen Blanker is started it normally
+               displays a dialog box that allows you to set
+               some options.  The command line parameter
+               /INSTALL used at startup suppresses this
+               dialog box and uses default or previously set
+               values.
+               
+               If Screen Blanker is already active when it
+               is started, the new copy communicates with
+               the previous copy to change the options in
+               effect. The Remove button in the dialog box
+               can be used to terminate a previously-
+               activated screen blanker.  The /NOCLOSE
+               option may be specified when Screen Blanker
+               is started to prevent it being removed.
+               
+               If the Screen Blanker device driver has been
+               installed, Screen Blanker will also blank the
+               screen while the DOS Compatibility mode
+               session is in control of the screen.
+               Alternatively, a separate DOS screen blanker
+               may be used in the DOS compatibility session.
+               
+Command Line Options:
+               The following options may be specified on the
+               command line when Screen Blanker is run:
+               
+               /INSTALL  This is normally used when Screen
+               Blanker is run from a STARTUP.CMD file.  It
+               bypasses the dialog box popup, and installs
+               the program with whatever options have been
+               previous set up.
+               
+               /NOCLOSE  This option prevents the Screen
+               Blanker from being removed from memory, and
+               also prevents changing most of its options.
+               If Screen Blanker is run from a STARTUP.CMD
+               file with this option, the only way to remove
+               it is to remove the command from STARTUP.CMD
+               and reboot the system.
+               
+               /DEBUG    This option causes Screen Blanker
+               to maintain some internal debugging
+
+                                                      Page 4
+
+               information.  This option is only of interest
+               to the developer.
+               
+Dialog Box Options:
+               The Screen Blanker dialog box allows setting
+               various options.
+
+               The "PM Session", "DOS Session",  and "Non-PM
+               Sessions" checkboxes allow you to control
+               when Screen Blanker is active.  By default it
+               is active in all sessions.  If you remove the
+               check from "PM Sessions", blanking will not
+               be active in the PM session.  Blanking for
+               the DOS session will only be possible if the
+               Screen Blanker device driver has been
+               installed.
+
+               The time interval at which blanking should
+               occur may be entered in the indicated place.
+               The default is five minutes.
+
+               The "Show clock" check box can be used to
+               control whether the time and date are
+               displayed during "blanked" periods.  If "Show
+               clock" is selected, then the "Colors"
+               pushbutton can be used to adjust the colors
+               used in the time/date display.  When this
+               pushbutton is selected a second dialog box
+               pops up containing scroll bars that are used
+               to select the colors.
+
+               The "Timeout Program Setup" button causes
+               another dialog box to pop up.  This dialog
+               box allows you to determine what program is
+               run after a period of inactivity and whether
+               a warning message is given first.  This is
+               described in more detail below.  A check box
+               allows you to enable or disable this
+               function.  The function is automatically
+               disabled if a timeout program hasn't been
+               specified via the setup dialog.
+
+               If the "Save settings" check box is selected,
+               then your preferences for the other options
+               will be saved in the system OS2.INI file, and
+               will be applied automatically whenever the
+               Screen Blanker is subsequently started.
+               
+               The "Timeout Program" dialog box contains the
+               following additional options:
+               
+               -- A "Warning Message" to be issued, and the
+               time period at which it should occur. A check
+               box specifies whether an audible alert (beep)
+               should be sounded.  Either or both may be
+
+                                                      Page 5
+
+               given.  If neither is selected, there will be
+               no warning before the inactivity program is
+               run.  The time period given must be less than
+               the time specified for running the timeout
+               program.
+               
+               -- The program or command file to be run, and
+               the time period at which to run it. By
+               default, no program is run.  Any OS/2 program
+               or command file may be specified.  The
+               program must either be in the default search
+               path set up by CONFIG.SYS, or its path must
+               be fully specified.
+               
+               -- The program is run via an OS/2 command
+               window.  Normally this window is closed after
+               the program runs.  An option is provided to
+               not close this window.  This may be useful if
+               the program produces any error messages, to
+               give you a chance to see them before the
+               window closes.
+
+               
+Caveats:   (1) Screen Blanker uses the OS/2 VioPopUp service
+               to blank the screen.  OS/2 limits use of this
+               function to one program (session) at a time.
+               This means that if a running program has
+               taken over the screen by "popping up", Screen
+               Blanker will be unable to blank the screen.
+               It also means that a running program that
+               wants to use the "popup" while the screen is
+               blanked will be unable to do so.  Most
+               programs that use this function appear to
+               wait for the screen to be available, so in
+               practice this doesn't seem to be a serious
+               problem.
+
+          (2)  Some levels of OS/2 version 1.2 contain a bug
+               in VioPopUp which results in a "Protection
+               Violation" (Message SYS1943) if the program
+               is removed (by selecting the Remove option).
+               This occurs only if it has blanked the screen
+               one or more times before being removed.  This
+               error arises a few seconds after the program
+               has terminated and appears to be beyond my
+               control.  It is apparently harmless, and has
+               been corrected in recent levels of OS/2 1.2.
+
+Author:        Alan Ballard,
+               3452 West 11th Avenue,
+               Vancouver, Canada, V6R 2J9
+
+               Compuserve: 70446,44
+               Internet:   ballard@ucs.ubc.ca
